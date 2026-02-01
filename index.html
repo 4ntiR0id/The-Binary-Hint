@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Binary Hint</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: #0d0d0d;
+            border-radius: 15px;
+            padding: 20px 15px;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+            max-width: 100%;
+            border: 2px solid #ffffff;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-selection {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: 2px solid #ffffff;
+            background: #000000;
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            flex: 1;
+            max-width: 150px;
+        }
+
+        .mode-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .game-area {
+            display: none;
+        }
+
+        .game-area.active {
+            display: block;
+        }
+
+        .hints-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .hints-container.single-column {
+            grid-template-columns: 1fr;
+        }
+
+        .hint-card {
+            background: #000000;
+            border: 2px solid #ffffff;
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .hints-container.single-column .hint-card {
+            padding: 12px 15px;
+        }
+
+        .hint-title {
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .hint-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            direction: ltr;
+        }
+
+        .hint-number {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: bold;
+            background: #000000;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .hint-number.correct {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .hint-description {
+            font-size: 0.8em;
+            color: #cccccc;
+            line-height: 1.3;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-area {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            direction: ltr;
+        }
+
+        .input-area.single-row {
+            flex-wrap: nowrap;
+            justify-content: center;
+            padding: 10px 5px;
+            gap: 5px;
+        }
+
+        /* Rotating Wheel Styles */
+        .wheel-container {
+            display: inline-block;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .wheel-input {
+            width: 60px;
+            height: 100px;
+            background: linear-gradient(to bottom, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            border: 3px solid #ffffff;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8),
+                        0 0 15px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+
+        /* Smaller wheels for 8 digit mode */
+        .input-area.single-row .wheel-container {
+            flex-shrink: 1;
+        }
+
+        .input-area.single-row .wheel-input {
+            width: 30px;
+            height: 75px;
+            border: 2px solid #ffffff;
+        }
+
+        .wheel-numbers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            width: 100%;
+        }
+
+        .wheel-number {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #444;
+            opacity: 0.15;
+            transition: all 0.3s;
+        }
+
+        .wheel-number.active {
+            color: #ffffff;
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            font-size: 2em;
+        }
+
+        /* Smaller numbers for 8 digit mode */
+        .input-area.single-row .wheel-number {
+            height: 30px;
+            font-size: 1.2em;
+        }
+
+        .input-area.single-row .wheel-number.active {
+            font-size: 1.4em;
+        }
+
+        .wheel-controls {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 3;
+        }
+
+        .wheel-controls.top {
+            top: 5px;
+        }
+
+        .wheel-controls.bottom {
+            bottom: 5px;
+        }
+
+        .wheel-btn {
+            width: 30px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #ffffff;
+            color: #ffffff;
+            font-size: 0.8em;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        /* Smaller buttons for 8 digit mode */
+        .input-area.single-row .wheel-btn {
+            width: 18px;
+            height: 13px;
+            font-size: 0.55em;
+        }
+
+        .wheel-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .wheel-btn:active {
+            transform: scale(0.9);
+        }
+
+        .btn {
+            padding: 14px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-check {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-new {
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            width: 100%;
+        }
+
+        .message.success {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: block;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .message.error {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ff4444;
+            border: 2px solid #ff4444;
+            display: block;
+        }
+
+        .attempts {
+            text-align: center;
+            font-size: 1em;
+            margin-top: 12px;
+            color: #ffffff;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        @keyframes binaryRain {
+            0% {
+                top: -100%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+
+        .binary-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.05;
+        }
+
+        .binary-column {
+            position: absolute;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #ffffff;
+            animation: binaryRain linear infinite;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Help button — fixed bottom-right */
+        .help-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #ffffff;
+            font-size: 1.3em;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        /* Lang button — fixed bottom-left */
+        .lang-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #ffffff;
+            font-size: 1.3em;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .help-btn:hover, .lang-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #0d0d0d;
+            border: 2px solid #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            line-height: 1;
+        }
+
+        .modal h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .modal h3 {
+            color: #ffffff;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .modal p, .modal li {
+            color: #cccccc;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .modal ul {
+            margin-left: 20px;
+        }
+
+        .example-box {
+            background: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .modal-body-ar { display: block; }
+        .modal-body-en { display: none; }
+
+        body.lang-en .modal-body-ar { display: none; }
+        body.lang-en .modal-body-en { display: block; }
+    </style>
+</head>
+<body>
+    <div class="binary-bg" id="binary-bg"></div>
+
+    <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
+    <button class="help-btn" onclick="openModal('help')" title="المساعدة / Help">?</button>
+
+    <div class="container">
+        <h1>The Binary Hint</h1>
+
+        <div class="mode-selection">
+            <button class="mode-btn active" onclick="selectMode(4)">4 Digit</button>
+            <button class="mode-btn" onclick="selectMode(8)">8 Digit</button>
+        </div>
+
+        <div class="game-area active" id="game-area">
+            
+            <div class="input-area" id="input-area"></div>
+            
+            <div class="hints-container" id="hints-container"></div>
+            
+            <div class="controls">
+                
+                <button class="btn btn-check" onclick="checkGuess()" id="btnCheck">تحقق من التخمين</button>
+                <button class="btn btn-new" onclick="newGame()" id="btnNew">لعبة جديدة</button>
+                
+                <div class="message" id="message"></div>
+                <div class="attempts" id="attempts">عدد المحاولات: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('help')">×</button>
+
+            <!-- Arabic -->
+            <div class="modal-body-ar">
+                <h2>❓ كيفية اللعب</h2>
+                <h3>📋 الهدف:</h3>
+                <p>اكتشاف الكود السري باستخدام التلميحات المعطاة</p>
+                <h3>🎮 خطوات اللعب:</h3>
+                <ul>
+                    <li><strong>اختر الوضع:</strong> 4 أرقام (6 تلميحات) أو 8 أرقام (10 تلميحات)</li>
+                    <li><strong>ادرس التلميحات:</strong> كل تلميح يعطيك معلومات عن الكود</li>
+                    <li><strong>أدخل تخمينك:</strong> استخدم الأسهم ▲▼ لتدوير العجلات</li>
+                    <li><strong>تحقق:</strong> اضغط زر "تحقق من التخمين"</li>
+                </ul>
+                <h3>💡 أنواع التلميحات:</h3>
+                <div class="example-box">
+                    <p><strong>✅ رقم واحد صحيح وفي المكان الصحيح</strong></p>
+                    <p style="color: #999;">معناه: رقم واحد فقط في موضعه الصحيح</p>
+                </div>
+                <div class="example-box">
+                    <p><strong>🔄 رقم واحد صحيح لكن في المكان الخطأ</strong></p>
+                    <p style="color: #999;">معناه: الرقم موجود لكن في موضع مختلف</p>
+                </div>
+                <div class="example-box">
+                    <p><strong>❌ لا شيء صحيح</strong></p>
+                    <p style="color: #999;">معناه: لا يوجد أي رقم من هذه الأرقام في الكود</p>
+                </div>
+                <h3>📝 مثال:</h3>
+                <div class="example-box">
+                    <p><strong>الكود السري (مخفي):</strong> 3 1 4 2</p>
+                    <p><strong>تلميح 1:</strong> 6 8 4 5 → رقم واحد صحيح وفي المكان الصحيح</p>
+                    <p style="color: #999;">الاستنتاج: الرقم 4 في الموضع الثالث صحيح!</p>
+                </div>
+                <h3>🎯 نصيحة:</h3>
+                <p>استخدم ورقة وقلم لتسجيل استنتاجاتك من كل تلميح!</p>
+            </div>
+
+            <!-- English -->
+            <div class="modal-body-en">
+                <h2>❓ How to Play</h2>
+                <h3>📋 Objective:</h3>
+                <p>Discover the secret code using the given hints</p>
+                <h3>🎮 How to Play:</h3>
+                <ul>
+                    <li><strong>Choose Mode:</strong> 4 digits (6 hints) or 8 digits (10 hints)</li>
+                    <li><strong>Study Hints:</strong> Each hint gives information about the code</li>
+                    <li><strong>Enter Guess:</strong> Use arrows ▲▼ to rotate the wheels</li>
+                    <li><strong>Check:</strong> Press "Check Guess" button</li>
+                </ul>
+                <h3>💡 Hint Types:</h3>
+                <div class="example-box">
+                    <p><strong>✅ One number correct and well placed</strong></p>
+                    <p style="color: #999;">Meaning: One number is in the correct position</p>
+                </div>
+                <div class="example-box">
+                    <p><strong>🔄 One number correct but wrongly placed</strong></p>
+                    <p style="color: #999;">Meaning: The number exists but in wrong position</p>
+                </div>
+                <div class="example-box">
+                    <p><strong>❌ Nothing is correct</strong></p>
+                    <p style="color: #999;">Meaning: None of these numbers are in the code</p>
+                </div>
+                <h3>📝 Example:</h3>
+                <div class="example-box">
+                    <p><strong>Secret Code (hidden):</strong> 3 1 4 2</p>
+                    <p><strong>Hint 1:</strong> 6 8 4 5 → One number correct and well placed</p>
+                    <p style="color: #999;">Conclusion: Number 4 in position 3 is correct!</p>
+                </div>
+                <h3>🎯 Tip:</h3>
+                <p>Use paper and pen to track your deductions from each hint!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        let currentMode = 4;
+        let secretCode = [];
+        let attempts = 0;
+        let hintsData = [];
+        let wheelValues = [];
+        let currentLang = 'ar'; // default Arabic
+
+        // ─── Localization ────────────────────────────────────────────
+        const L = {
+            ar: {
+                hintLabel: (i) => `تلميح ${i}:`,
+                correctWellPlaced: 'رقم واحد صحيح وفي المكان الصحيح',
+                correctWrongPlaced1: 'رقم واحد صحيح لكن في المكان الخطأ',
+                correctWrongPlaced2: 'رقمان صحيحان لكن في المكان الخطأ',
+                nothingCorrect: 'لا شيء صحيح',
+                checkBtn: 'تحقق من التخمين',
+                newBtn: 'لعبة جديدة',
+                attemptsLabel: (n) => `عدد المحاولات: ${n}`,
+                successMsg: (n) => `🎉 مبروك! لقد فتحت القفل في ${n} محاولة!`,
+                errorMsg: 'حاول مرة أخرى!',
+                langBtnText: 'EN'
+            },
+            en: {
+                hintLabel: (i) => `Hint ${i}:`,
+                correctWellPlaced: 'One correct and well placed',
+                correctWrongPlaced1: 'One correct but wrongly placed',
+                correctWrongPlaced2: 'Two correct but wrongly placed',
+                nothingCorrect: 'Nothing is correct',
+                checkBtn: 'Check Guess',
+                newBtn: 'New Game',
+                attemptsLabel: (n) => `Attempts: ${n}`,
+                successMsg: (n) => `🎉 Congrats! You cracked the code in ${n} attempts!`,
+                errorMsg: 'Try again!',
+                langBtnText: 'AR'
+            }
+        };
+
+        function t() { return L[currentLang]; }
+
+        // Toggle language
+        function toggleLang() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.body.className = 'lang-' + currentLang;
+            document.getElementById('langBtn').textContent = t().langBtnText;
+
+            // Update live UI text
+            document.getElementById('btnCheck').textContent = t().checkBtn;
+            document.getElementById('btnNew').textContent = t().newBtn;
+            document.getElementById('attempts').textContent = t().attemptsLabel(attempts);
+
+            // Re-render hints with new language descriptions
+            renderHints();
+        }
+
+        // ─── Sounds ──────────────────────────────────────────────────
+        function playKeySound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 800; osc.type = 'square';
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.05);
+        }
+
+        function playWheelSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 400; osc.type = 'sine';
+            gain.gain.setValueAtTime(0.05, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
+        }
+
+        // ─── Binary rain background ──────────────────────────────────
+        function createBinaryBackground() {
+            const bg = document.getElementById('binary-bg');
+            const columns = Math.floor(window.innerWidth / 20);
+            for (let i = 0; i < columns; i++) {
+                const col = document.createElement('div');
+                col.className = 'binary-column';
+                col.style.left = (i * 20) + 'px';
+                col.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                col.style.animationDelay = (Math.random() * 5) + 's';
+                let txt = '';
+                for (let j = 0; j < 30; j++) txt += (Math.random() > 0.5 ? '1' : '0') + '<br>';
+                col.innerHTML = txt;
+                bg.appendChild(col);
+            }
+        }
+
+        // ─── Modal ────────────────────────────────────────────────────
+        function openModal(type) {
+            document.getElementById(type === 'help' ? 'helpModal' : 'aboutModal').classList.add('show');
+        }
+        function closeModal(type) {
+            document.getElementById(type === 'help' ? 'helpModal' : 'aboutModal').classList.remove('show');
+        }
+
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal')) e.target.classList.remove('show');
+        };
+
+        // ─── Mode selection ───────────────────────────────────────────
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            newGame();
+        }
+
+        // ─── Secret code & hints ──────────────────────────────────────
+        function generateSecretCode() {
+            secretCode = [];
+            for (let i = 0; i < currentMode; i++) secretCode.push(Math.floor(Math.random() * 10));
+            console.log('Secret Code:', secretCode.join(''));
+        }
+
+        function generateHints() {
+            const num = currentMode === 4 ? 6 : 10;
+            hintsData = [];
+            for (let i = 0; i < num; i++) hintsData.push(generateSingleHint());
+        }
+
+        function generateSingleHint() {
+            const hintType = Math.floor(Math.random() * 3);
+            let numbers = [];
+            let type; // key for description
+
+            for (let i = 0; i < currentMode; i++) numbers.push(Math.floor(Math.random() * 10));
+
+            if (hintType === 0) {
+                const pos = Math.floor(Math.random() * currentMode);
+                numbers[pos] = secretCode[pos];
+                for (let i = 0; i < currentMode; i++) {
+                    if (i !== pos) {
+                        while (numbers[i] === secretCode[i]) numbers[i] = Math.floor(Math.random() * 10);
+                    }
+                }
+                type = 'correctWellPlaced';
+            } else if (hintType === 1) {
+                const correctCount = Math.random() > 0.5 ? 1 : 2;
+                const srcPos = getRandomPositions(currentMode, correctCount);
+
+                for (let i = 0; i < currentMode; i++) {
+                    while (numbers[i] === secretCode[i] || secretCode.includes(numbers[i]))
+                        numbers[i] = Math.floor(Math.random() * 10);
+                }
+
+                srcPos.forEach((sp) => {
+                    let wp, att = 0;
+                    do { wp = Math.floor(Math.random() * currentMode); att++; }
+                    while ((wp === sp || numbers[wp] === secretCode[wp]) && att < 20);
+                    if (att < 20) numbers[wp] = secretCode[sp];
+                });
+
+                type = correctCount === 1 ? 'correctWrongPlaced1' : 'correctWrongPlaced2';
+            } else {
+                for (let i = 0; i < currentMode; i++) {
+                    let att = 0;
+                    do { numbers[i] = Math.floor(Math.random() * 10); att++; }
+                    while (secretCode.includes(numbers[i]) && att < 50);
+                }
+                type = 'nothingCorrect';
+            }
+
+            return { numbers, type };
+        }
+
+        function getRandomPositions(max, count) {
+            const pos = [];
+            while (pos.length < count) {
+                const p = Math.floor(Math.random() * max);
+                if (!pos.includes(p)) pos.push(p);
+            }
+            return pos;
+        }
+
+        // ─── Render hints ─────────────────────────────────────────────
+        function renderHints() {
+            const container = document.getElementById('hints-container');
+            container.innerHTML = '';
+            container.classList.toggle('single-column', currentMode === 8);
+
+            hintsData.forEach((hint, idx) => {
+                const card = document.createElement('div');
+                card.className = 'hint-card';
+
+                const title = document.createElement('div');
+                title.className = 'hint-title';
+                title.textContent = t().hintLabel(idx + 1);
+
+                const nums = document.createElement('div');
+                nums.className = 'hint-numbers';
+                hint.numbers.forEach((n, ni) => {
+                    const box = document.createElement('div');
+                    box.className = 'hint-number';
+                    box.textContent = n;
+                    box.dataset.hintIndex = idx;
+                    box.dataset.numIndex = ni;
+                    nums.appendChild(box);
+                });
+
+                const desc = document.createElement('div');
+                desc.className = 'hint-description';
+                desc.textContent = t()[hint.type];
+
+                card.appendChild(title);
+                card.appendChild(nums);
+                card.appendChild(desc);
+                container.appendChild(card);
+            });
+        }
+
+        // ─── Wheel input ──────────────────────────────────────────────
+        function rotateWheel(index, dir) {
+            playWheelSound();
+            wheelValues[index] = dir === 'up'
+                ? (wheelValues[index] + 1) % 10
+                : (wheelValues[index] - 1 + 10) % 10;
+            updateWheelDisplay(index);
+        }
+
+        function updateWheelDisplay(index) {
+            const val = wheelValues[index];
+            const wheelNums = document.getElementById(`wheel-numbers-${index}`);
+            const inputArea = document.getElementById('input-area');
+            const single = inputArea.classList.contains('single-row');
+
+            const center = single ? 37.5 : 50;
+            const height = single ? 30 : 40;
+            const numOff = single ? 15 : 20;
+
+            wheelNums.style.transform = `translateY(${center - val * height - numOff}px)`;
+
+            wheelNums.querySelectorAll('.wheel-number').forEach((el, i) => {
+                el.classList.toggle('active', i === val);
+            });
+        }
+
+        function renderInputs() {
+            const area = document.getElementById('input-area');
+            area.innerHTML = '';
+            wheelValues = [];
+            area.classList.toggle('single-row', currentMode === 8);
+
+            for (let i = 0; i < currentMode; i++) {
+                wheelValues.push(0);
+
+                const wc = document.createElement('div');
+                wc.className = 'wheel-container';
+
+                const wi = document.createElement('div');
+                wi.className = 'wheel-input';
+                wi.id = `wheel-${i}`;
+
+                const wn = document.createElement('div');
+                wn.className = 'wheel-numbers';
+                wn.id = `wheel-numbers-${i}`;
+
+                for (let n = 0; n < 10; n++) {
+                    const nd = document.createElement('div');
+                    nd.className = 'wheel-number' + (n === 0 ? ' active' : '');
+                    nd.textContent = n;
+                    wn.appendChild(nd);
+                }
+
+                const upBtn = document.createElement('button');
+                upBtn.className = 'wheel-btn';
+                upBtn.innerHTML = '▲';
+                upBtn.onclick = () => rotateWheel(i, 'up');
+
+                const downBtn = document.createElement('button');
+                downBtn.className = 'wheel-btn';
+                downBtn.innerHTML = '▼';
+                downBtn.onclick = () => rotateWheel(i, 'down');
+
+                const topCtrl = document.createElement('div');
+                topCtrl.className = 'wheel-controls top';
+                topCtrl.appendChild(upBtn);
+
+                const botCtrl = document.createElement('div');
+                botCtrl.className = 'wheel-controls bottom';
+                botCtrl.appendChild(downBtn);
+
+                wi.appendChild(wn);
+                wi.appendChild(topCtrl);
+                wi.appendChild(botCtrl);
+
+                wc.appendChild(wi);
+                area.appendChild(wc);
+
+                updateWheelDisplay(i);
+            }
+        }
+
+        // ─── Check / win / celebrate ──────────────────────────────────
+        function checkGuess() {
+            const guess = wheelValues.slice();
+            attempts++;
+            document.getElementById('attempts').textContent = t().attemptsLabel(attempts);
+
+            if (JSON.stringify(guess) === JSON.stringify(secretCode)) {
+                showMessage(t().successMsg(attempts), 'success');
+                revealCode();
+                celebrate();
+                disableInputs();
+            } else {
+                showMessage(t().errorMsg, 'error');
+                setTimeout(() => { document.getElementById('message').style.display = 'none'; }, 2000);
+            }
+        }
+
+        function revealCode() {
+            for (let i = 0; i < currentMode; i++) {
+                wheelValues[i] = secretCode[i];
+                updateWheelDisplay(i);
+                const w = document.getElementById(`wheel-${i}`);
+                if (w) w.classList.add('success');
+            }
+            highlightCorrectHints();
+        }
+
+        function highlightCorrectHints() {
+            document.querySelectorAll('.hint-number').forEach(box => {
+                const hi = parseInt(box.dataset.hintIndex);
+                const ni = parseInt(box.dataset.numIndex);
+                if (parseInt(box.textContent) === secretCode[ni]) {
+                    setTimeout(() => box.classList.add('correct'), 500 + hi * 100);
+                }
+            });
+        }
+
+        function disableInputs() {
+            document.querySelectorAll('.wheel-btn').forEach(b => b.disabled = true);
+        }
+
+        function showMessage(text, type) {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.className = `message ${type}`;
+        }
+
+        function celebrate() {
+            const cel = document.getElementById('celebration');
+            cel.innerHTML = '';
+            const colors = ['#ffffff','#eeeeee','#dddddd','#cccccc','#f5f5f5'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-10px;width:10px;height:10px;background:${colors[Math.floor(Math.random()*colors.length)]};animation:confetti-fall ${2+Math.random()*2}s linear;box-shadow:0 0 5px ${colors[Math.floor(Math.random()*colors.length)]}`;
+                    cel.appendChild(c);
+                    setTimeout(() => c.remove(), 4000);
+                }, i * 30);
+            }
+        }
+
+        // ─── New Game ─────────────────────────────────────────────────
+        function newGame() {
+            attempts = 0;
+            document.getElementById('attempts').textContent = t().attemptsLabel(0);
+            document.getElementById('message').style.display = 'none';
+            document.getElementById('btnCheck').textContent = t().checkBtn;
+            document.getElementById('btnNew').textContent = t().newBtn;
+
+            generateSecretCode();
+            generateHints();
+            renderHints();
+            renderInputs();
+        }
+
+        // ─── Init ─────────────────────────────────────────────────────
+        window.onload = () => {
+            document.body.className = 'lang-' + currentLang;
+            createBinaryBackground();
+            newGame();
+        };
+    </script>
+</body>
+</html>
