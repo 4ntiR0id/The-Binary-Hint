@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Binary Hint</title>
+    <title>The Puzzle Hint</title>
     <style>
         * {
             margin: 0;
@@ -361,7 +361,7 @@
             }
         }
 
-        @keyframes binaryRain {
+        @keyframes PuzzleRain {
             0% {
                 top: -100%;
             }
@@ -370,7 +370,7 @@
             }
         }
 
-        .binary-bg {
+        .Puzzle-bg {
             position: fixed;
             top: 0;
             left: 0;
@@ -382,12 +382,12 @@
             opacity: 0.05;
         }
 
-        .binary-column {
+        .Puzzle-column {
             position: absolute;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             color: #ffffff;
-            animation: binaryRain linear infinite;
+            animation: PuzzleRain linear infinite;
         }
 
         .container {
@@ -529,13 +529,13 @@
     </style>
 </head>
 <body>
-    <div class="binary-bg" id="binary-bg"></div>
+    <div class="Puzzle-bg" id="Puzzle-bg"></div>
 
     <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
     <button class="help-btn" onclick="openModal('help')" title="المساعدة / Help">?</button>
 
     <div class="container">
-        <h1>The Binary Hint</h1>
+        <h1>The Puzzle Hint</h1>
 
         <div class="mode-selection">
             <button class="mode-btn active" onclick="selectMode(4)">4 Digit</button>
@@ -716,13 +716,13 @@
             osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
         }
 
-        // ─── Binary rain background ──────────────────────────────────
-        function createBinaryBackground() {
-            const bg = document.getElementById('binary-bg');
+        // ─── Puzzle rain background ──────────────────────────────────
+        function createPuzzleBackground() {
+            const bg = document.getElementById('Puzzle-bg');
             const columns = Math.floor(window.innerWidth / 20);
             for (let i = 0; i < columns; i++) {
                 const col = document.createElement('div');
-                col.className = 'binary-column';
+                col.className = 'Puzzle-column';
                 col.style.left = (i * 20) + 'px';
                 col.style.animationDuration = (Math.random() * 10 + 10) + 's';
                 col.style.animationDelay = (Math.random() * 5) + 's';
@@ -1016,9 +1016,10 @@
         // ─── Init ─────────────────────────────────────────────────────
         window.onload = () => {
             document.body.className = 'lang-' + currentLang;
-            createBinaryBackground();
+            createPuzzleBackground();
             newGame();
         };
     </script>
 </body>
 </html>
+
